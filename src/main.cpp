@@ -8,20 +8,33 @@
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
 #include "json.hpp"
+#include "spline.h"
+#include "planner.hpp"
 
 using namespace std;
 
 // for convenience
 using json = nlohmann::json;
 
+
+// global variables
+const double dist_inc = 0.5;
+int current_lane = 1;  // middle lane 0--1--2
+double velocity = 0;
+
+
 // For converting back and forth between radians and degrees.
+/////////////////////////////////////////////////////////////////////////
 constexpr double pi() { return M_PI; }
 double deg2rad(double x) { return x * pi() / 180; }
 double rad2deg(double x) { return x * 180 / pi(); }
 
+
+
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
 // else the empty string "" will be returned.
+/////////////////////////////////////////////////////////////////////////
 string hasData(string s) {
   auto found_null = s.find("null");
   auto b1 = s.find_first_of("[");
@@ -34,10 +47,18 @@ string hasData(string s) {
   return "";
 }
 
+
+// Distance
+/////////////////////////////////////////////////////////////////////////
 double distance(double x1, double y1, double x2, double y2)
 {
 	return sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
 }
+
+
+
+// Closest waypoint
+/////////////////////////////////////////////////////////////////////////
 int ClosestWaypoint(double x, double y, const vector<double> &maps_x, const vector<double> &maps_y)
 {
 
@@ -61,6 +82,9 @@ int ClosestWaypoint(double x, double y, const vector<double> &maps_x, const vect
 
 }
 
+
+// Next waypoint
+/////////////////////////////////////////////////////////////////////////
 int NextWaypoint(double x, double y, double theta, const vector<double> &maps_x, const vector<double> &maps_y)
 {
 
@@ -82,7 +106,11 @@ int NextWaypoint(double x, double y, double theta, const vector<double> &maps_x,
 
 }
 
+
+
+
 // Transform from Cartesian x,y coordinates to Frenet s,d coordinates
+/////////////////////////////////////////////////////////////////////////
 vector<double> getFrenet(double x, double y, double theta, const vector<double> &maps_x, const vector<double> &maps_y)
 {
 	int next_wp = NextWaypoint(x,y, theta, maps_x,maps_y);
@@ -131,36 +159,25 @@ vector<double> getFrenet(double x, double y, double theta, const vector<double> 
 
 }
 
-// Transform from Frenet s,d coordinates to Cartesian x,y
-vector<double> getXY(double s, double d, const vector<double> &maps_s, const vector<double> &maps_x, const vector<double> &maps_y)
-{
-	int prev_wp = -1;
 
-	while(s > maps_s[prev_wp+1] && (prev_wp < (int)(maps_s.size()-1) ))
-	{
-		prev_wp++;
-	}
 
-	int wp2 = (prev_wp+1)%maps_x.size();
 
-	double heading = atan2((maps_y[wp2]-maps_y[prev_wp]),(maps_x[wp2]-maps_x[prev_wp]));
-	// the x,y,s along the segment
-	double seg_s = (s-maps_s[prev_wp]);
 
-	double seg_x = maps_x[prev_wp]+seg_s*cos(heading);
-	double seg_y = maps_y[prev_wp]+seg_s*sin(heading);
 
-	double perp_heading = heading-pi()/2;
 
-	double x = seg_x + d*cos(perp_heading);
-	double y = seg_y + d*sin(perp_heading);
 
-	return {x,y};
 
-}
 
+
+
+
+
+// Main
+/////////////////////////////////////////////////////////////////////////
 int main() {
   uWS::Hub h;
+  
+  Planner  planner;
 
   // Load up map values for waypoint's x,y,s and d normalized normal vectors
   vector<double> map_waypoints_x;
@@ -196,7 +213,9 @@ int main() {
   	map_waypoints_dy.push_back(d_y);
   }
 
-  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  planner.setMapWaypoints(map_waypoints_x, map_waypoints_y, map_waypoints_s);
+
+  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy, &planner](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -214,7 +233,6 @@ int main() {
         
         if (event == "telemetry") {
           // j[1] is the data JSON object
-          
         	// Main car's localization Data
           	double car_x = j[1]["x"];
           	double car_y = j[1]["y"];
@@ -239,9 +257,47 @@ int main() {
           	vector<double> next_y_vals;
 
 
-          	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
-          	msgJson["next_x"] = next_x_vals;
-          	msgJson["next_y"] = next_y_vals;
+          	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds           
+               
+            int path_size = previous_path_x.size();
+          	
+            planner.behavioralUpdate(car_s, current_lane, velocity, sensor_fusion, end_path_s, path_size);
+
+            planner.motionPlannerUpdate(car_x, car_y, car_s, car_yaw, current_lane, velocity, sensor_fusion, end_path_s, previous_path_x, previous_path_y);
+                                               
+
+            // start from the previouse path points
+            for (int i = 0; i < previous_path_x.size(); ++i){
+                next_x_vals.push_back(previous_path_x[i]);
+                next_y_vals.push_back(previous_path_y[i]);
+            }
+
+            double horizon_x = 30.0;
+            double horizon_y = planner.trajectory(horizon_x);
+            double horizon_dist = sqrt((horizon_x*horizon_x) + (horizon_y*horizon_y));
+
+            double x_add_on = 0;
+            for (int i = 1; i <= 50 - previous_path_x.size(); ++i){
+                double N = horizon_dist / (0.02 * velocity / 2.24);
+                double x_point = x_add_on + horizon_x / N;
+                double y_point = planner.trajectory(x_point);
+                x_add_on = x_point;
+
+                double x_ref = x_point;
+                double y_ref = y_point;
+
+                x_point = (x_ref * cos(planner.ref_yaw) - y_ref * sin(planner.ref_yaw));
+                y_point = (x_ref * sin(planner.ref_yaw) + y_ref * cos(planner.ref_yaw));
+
+                x_point += planner.ref_x;
+                y_point += planner.ref_y;
+
+                next_x_vals.push_back(x_point);
+                next_y_vals.push_back(y_point);
+              }
+
+            msgJson["next_x"] = next_x_vals;
+            msgJson["next_y"] = next_y_vals;
 
           	auto msg = "42[\"control\","+ msgJson.dump()+"]";
 
@@ -254,8 +310,8 @@ int main() {
         std::string msg = "42[\"manual\",{}]";
         ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
       }
-    }
-  });
+    }  
+ });
 
   // We don't need this since we're not using HTTP but if it's removed the
   // program
