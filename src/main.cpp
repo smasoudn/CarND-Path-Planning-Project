@@ -263,7 +263,7 @@ int main() {
           	
             planner.behavioralUpdate(car_s, current_lane, velocity, sensor_fusion, end_path_s, path_size);
 
-            planner.motionPlannerUpdate(car_x, car_y, car_s, car_yaw, current_lane, velocity, sensor_fusion, end_path_s, previous_path_x, previous_path_y);
+            planner.motionPlannerUpdate(car_x, car_y, car_s, car_yaw, current_lane, previous_path_x, previous_path_y);
                                                
 
             // start from the previouse path points
