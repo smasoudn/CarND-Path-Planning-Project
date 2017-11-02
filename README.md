@@ -1,6 +1,36 @@
 # CarND-Path-Planning-Project
 Self-Driving Car Engineer Nanodegree Program
    
+   
+### Methodology
+After receiving the waypoints, 
+- the `s` coordinate of the vehicle (`car_s`)
+- the current lane
+- the desired velocity of the car
+- the sensor fusion information
+
+are passed to the behavioral planner (`planner.behavioralUpdate`).
+
+The `warning` flag is defined to chech whether there is  any heading car infront of the ego-car or not. If ther is no heading car infront of the ego-car, the behavioral planner just keep the car in the lane.
+
+A boolean tuple, `too_close`, is defined to check the occupancy of the lanes. For each car in the `sensor_fusion`, we check whether they occupied the lanes or not.
+
+This will help the behavioral planner to issue switch lane (to left or right), if there is any heading car infront of the ego-car, or just keep the lane but reduce the speed to avoid any collision.
+
+
+The following variables are passed to the motion planner `motionPlannerUpdate`):
+- `car_x`
+- `car_y`
+- `car_s`
+- `car_yaw`
+- `current_lane`
+- `previous_path_x`
+- `previous_path_y`
+
+where the next waypoints are calculated, considering the proper lane  decided by the behavioral planner, and  smoothed using splain curve fitting technique.
+
+
+
 ### Simulator.
 You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases).
 

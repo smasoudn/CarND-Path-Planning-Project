@@ -107,7 +107,7 @@ public:
 			double v_s_predicted = v_s + path_size * 0.02 * v_speed;
 
 			// if car is ahead of our car and its closer than 30 meter
-			if ( abs(v_s - car_s) < 10 || abs(v_s_predicted - car_s_predicted) < 5 || (abs(v_s_predicted - car_s) < 10) || (abs(v_s - car_s_predicted) < 5)){          
+			if ( abs(v_s - car_s) < 5 || abs(v_s_predicted - car_s_predicted) < 5 || (abs(v_s_predicted - car_s) < 5) || (abs(v_s - car_s_predicted) < 10)){          
 				too_close[vehicle_lane] = true;
 			}
 			
