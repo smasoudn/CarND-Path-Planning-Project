@@ -21,6 +21,8 @@ private:
 	vector<double> map_waypoints_y;
 	vector<double> map_waypoints_s;
 	
+	bool new_command_issued = false;
+	
 		
 	double deg2rad(double x) { return x * M_PI / 180; }
 	
@@ -53,7 +55,33 @@ private:
 		return {x,y};
 
 	}
+	
+	
+	// Check if changing lane is completed
+	/////////////////////////////////////////////////////////////////////////	
+	bool cmdCompleted(bool& new_command_issued, double& car_d, int& current_lane)
+	{
+		static bool start_cmd = false;
+		
 
+		if ((car_d >= current_lane * 4 + 1) && (car_d <= current_lane * 4 + 3))
+		{
+			if (!start_cmd)
+			{
+				return false;
+			}
+			start_cmd = false;
+			new_command_issued = false;
+			return true;
+		}
+		else if(!start_cmd)
+		{
+			start_cmd = true;
+			return false;
+		}
+		
+		return false;
+	}
 
 
 public:
@@ -73,7 +101,7 @@ public:
 		map_waypoints_s = s;
 	}
 	
-	void behavioralUpdate(double &car_s, int &current_lane, double &velocity,  vector<vector<double>> sensor_fusion, double &end_path_s, int &path_size){
+	void behavioralUpdate(double &car_s, double& car_d, int &current_lane, double &velocity,  vector<vector<double>> sensor_fusion, double &end_path_s, int &path_size){
 
 		if (  path_size > 0)
 		{
@@ -126,6 +154,8 @@ public:
 		
 		//cout << too_close[0] << "  " << too_close[1] << "  " << too_close[2]  << endl;
 
+		int old_lane = current_lane;
+		
         // Decide to change lane 
 		if (warning)
 		{              
@@ -135,12 +165,10 @@ public:
 				  if(velocity < 49.5)
 				  {
 				      velocity += 0.448;	
-					  cout << "========>>>>>" << endl;
 				  }
 				  current_lane = MIDDLE_LANE;
 				}
 				else{
-					cout << "Reduce" << endl;
 			  		velocity -= 0.448;
 				}
 			}
@@ -150,7 +178,6 @@ public:
 				  if(velocity < 49.5)
 				  {
 				      velocity += 0.448;
-					  cout << "========>>>>>" << endl;
 				  }
 				  current_lane = LEFT_LANE;
 				}
@@ -158,12 +185,10 @@ public:
 					if(velocity < 49.5)
 					{
 				      velocity += 0.448;
-					  cout << "========>>>>>" << endl;
 					}
 			  		current_lane = RIGHT_LANE;
 				}else{
 		  			velocity -= 0.448;
-					cout << "Reduce" << endl;
 				}
 			}
 			
@@ -172,21 +197,30 @@ public:
 					if(velocity < 49.5)
 					{
 				      velocity += 0.448;
-					  cout << "========>>>>>" << endl;
 					}
 		  			current_lane = MIDDLE_LANE;
 				}
 				else{
 		  			velocity -= 0.448;
-					cout << "Reduce" << endl;
 				}
 			}
 		}
 		else if(velocity < 49.5){
 			velocity += 0.448;
-			cout << "========>>>>>" << endl;
 		}
-
+       
+		// New command issued
+		if (old_lane != current_lane && !new_command_issued)
+		{
+			new_command_issued = true;
+		}
+		else if (new_command_issued && !cmdCompleted(new_command_issued, car_d, current_lane))
+		{
+			// Do not issue new lane change until the last change command is completed
+			current_lane = old_lane;
+		}
+		
+			
 		too_close.clear();
 	}
 	

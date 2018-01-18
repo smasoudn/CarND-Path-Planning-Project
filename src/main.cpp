@@ -255,7 +255,7 @@ int main() {
           	
 			
 			// Behavioral planner - Decides  change lane left / change lane right / keep lane
-            planner.behavioralUpdate(car_s, current_lane, velocity, sensor_fusion, end_path_s, path_size);
+            planner.behavioralUpdate(car_s, car_d, current_lane, velocity, sensor_fusion, end_path_s, path_size);
 
 			
 			// Motion planner - generates trajectory that car needs to follow
@@ -293,7 +293,6 @@ int main() {
                 next_x_vals.push_back(x_point);
                 next_y_vals.push_back(y_point);
               }
-
             msgJson["next_x"] = next_x_vals;
             msgJson["next_y"] = next_y_vals;
 
