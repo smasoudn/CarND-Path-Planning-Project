@@ -164,14 +164,6 @@ vector<double> getFrenet(double x, double y, double theta, const vector<double> 
 
 
 
-
-
-
-
-
-
-
-
 // Main
 /////////////////////////////////////////////////////////////////////////
 int main() {
@@ -253,16 +245,20 @@ int main() {
 
           	json msgJson;
 
+			
+			// Defining next path points (x,y) that the car will visit sequentially every .02 seconds           
+                
           	vector<double> next_x_vals;
           	vector<double> next_y_vals;
-
-
-          	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds           
-               
+          	
             int path_size = previous_path_x.size();
           	
+			
+			// Behavioral planner - Decides  change lane left / change lane right / keep lane
             planner.behavioralUpdate(car_s, current_lane, velocity, sensor_fusion, end_path_s, path_size);
 
+			
+			// Motion planner - generates trajectory that car needs to follow
             planner.motionPlannerUpdate(car_x, car_y, car_s, car_yaw, current_lane, previous_path_x, previous_path_y);
                                                
 
@@ -272,13 +268,15 @@ int main() {
                 next_y_vals.push_back(previous_path_y[i]);
             }
 
-            double horizon_x = 30.0;
+            double horizon_x = 20.0;
             double horizon_y = planner.trajectory(horizon_x);
             double horizon_dist = sqrt((horizon_x*horizon_x) + (horizon_y*horizon_y));
-
+			
+			double N = horizon_dist / (0.02 * velocity / 2.24);
+			
             double x_add_on = 0;
-            for (int i = 1; i <= 50 - previous_path_x.size(); ++i){
-                double N = horizon_dist / (0.02 * velocity / 2.24);
+            for (int i = 1; i <= 50 - previous_path_x.size(); ++i)
+			{    
                 double x_point = x_add_on + horizon_x / N;
                 double y_point = planner.trajectory(x_point);
                 x_add_on = x_point;

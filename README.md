@@ -1,36 +1,76 @@
-# CarND-Path-Planning-Project
-Self-Driving Car Engineer Nanodegree Program
-   
-   
+# Behavioral and Path Planning for Self-Driving Cars
+
+This project is part of the Self-Driving Car Engineer Nanodegree Program by [Udacity](https://www.udacity.com/).
+
+This project implements the **Behavioral planner** and the **Motion planner** for self-driving cars.
+
+**Goal:** Drive the vehicle safely in highway, autonomously. The vehicle should:
+- drive not faster than 50 mph
+- change lane if necessary
+- change lane safely
+- drive drive smoothly (avoid exceeding maximum acceleration and jerk)
+- avoid collision
+
+**Simulator:** can be downloaded from [here](https://github.com/udacity/self-driving-car-sim/releases/tag/T3_v1.2)
+
+
+**Information provided:** 
+- Highway waypoints $(x, y, s, d_x, d_y)$
+- Ego-car position $(x, y, s, d, yaw, speed)$
+- Sensor fusion consists of other vehicles information $(id, x, y, v_x, v_y, s, d)$
+
+
+**Output:** 
+- Path points in global coordinate system $(x,y)$ that the car will visit sequentially every 0.02 seconds
+
+
 ### Methodology
-After receiving the waypoints, 
-- the `s` coordinate of the vehicle (`car_s`)
-- the current lane
-- the desired velocity of the car
-- the sensor fusion information
+This solution has a `planner` class that consists of:
+- **Behavioral planner (BP)** that  performs high-level decision making such as change lane, keep lane, reduce speed, or speed up;
+- **Motion planner (MOP)** that generates trajectory correponding to what behavioral planner dictated.
 
-are passed to the behavioral planner (`planner.behavioralUpdate`).
+#### Behavioral planner (BP)
+This module performs high-level decision making such as keep lane, change lane, etc. The way that BP makes decision is as follows.
 
-The `warning` flag is defined to chech whether there is  any heading car infront of the ego-car or not. If ther is no heading car infront of the ego-car, the behavioral planner just keep the car in the lane.
+A falg vector has been defined, `vector<bool> too_close`, that indicates whether each lane is occupied by other vehicles or not.
+The information of other vehicles is provided by  `sensor_fusion`.
 
-A boolean tuple, `too_close`, is defined to check the occupancy of the lanes. For each car in the `sensor_fusion`, we check whether they occupied the lanes or not.
+First, BP checks if there is a vehicle infront of the ego-car and in the same lane or not:
 
-This will help the behavioral planner to issue switch lane (to left or right), if there is any heading car infront of the ego-car, or just keep the lane but reduce the speed to avoid any collision.
+```
+if  (vehicle_s > ego_s) && (vehicle_s - ego_s < 30) && (vehicle_lane == current_lane)
+    too_close[current_lane] = true;
+```
+
+If there is no vehicle in the current lane, the ego-car just keeps the current lane and goes as fast as possible (not more than the speed limit).
+
+If there is a vehicle in the same lane as the ego-car, and infront of the ego-car with the distance of less than 30 meters the flag of the current lane becomes `true`.
+In this case, BP decides whether it needs to *switch lane* (to left or right) or *keep the current lane* and *reduce speed*.
+
+If there is a vehicle infront of the ego-car, BP checks the left lane, if there is enough **gap** on the left lane, issue the lane change. If the left lane is not available or it is occupied, BP check the right lane.
+
+The **gap** on the adjacent lanes is calculated as follows:
+
+```
+if (vehicle_s < ego_s + 15 && vehicle_s > ego_s - 15 && vehicle_d >= 0)
+    too_close[vehicle_lane] = true;
+```
+
+In the above psudocode, given the frenet $s$ of othe vehicles and the ego-car, BP checks if there is a 30 meters gap  (+/- 15 meters infront and back of the ego-car) in the adjacent lanes.
+If there is no gap, the corresponding lane is marked as occupied.
+
+In all cases other than the cases that ego-car must reduce its speed, BP check the speed and if it is less than the maximum desirable speed, it increases the speed.
 
 
-The following variables are passed to the motion planner `motionPlannerUpdate`):
-- `car_x`
-- `car_y`
-- `car_s`
-- `car_yaw`
-- `current_lane`
-- `previous_path_x`
-- `previous_path_y`
+#### Motion planner (MOP)
+The motion planner module in the `Planner` class, generates trajectories (sets of points) for the controller of the ego-car to follow.
 
-where the next waypoints are calculated, considering the proper lane  decided by the behavioral planner, and  smoothed using splain curve fitting technique.
+These trajectories is generated according to BP's decision. To have a smooth driving, MOP consideres points in 60, 90 and 120 meters from the current position of the ego-car,
+ and fits a spline to these points. 
+ 
+Finally, we sample from the trajectory and add it to the next points that vehicle needs to follow. The velocity of the ego-car depends on the  spacing of the points.
 
-
-
+ 
 ### Simulator.
 You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases).
 
@@ -38,7 +78,7 @@ You can download the Term3 Simulator which contains the Path Planning Project fr
 In this project your goal is to safely navigate around a virtual highway with other traffic that is driving +-10 MPH of the 50 MPH speed limit. You will be provided the car's localization and sensor fusion data, there is also a sparse map list of waypoints around the highway. The car should try to go as close as possible to the 50 MPH speed limit, which means passing slower traffic when possible, note that other cars will try to change lanes too. The car should avoid hitting other cars at all cost as well as driving inside of the marked road lanes at all times, unless going from one lane to another. The car should be able to make one complete loop around the 6946m highway. Since the car is trying to go 50 MPH, it should take a little over 5 minutes to complete 1 loop. Also the car should not experience total acceleration over 10 m/s^2 and jerk that is greater than 50 m/s^3.
 
 #### The map of the highway is in data/highway_map.txt
-Each waypoint in the list contains  [x,y,s,dx,dy] values. x and y are the waypoint's map coordinate position, the s value is the distance along the road to get to that waypoint in meters, the dx and dy values define the unit normal vector pointing outward of the highway loop.
+Each waypoint in the list contains  $[x,y,s,dx,dy]$ values. x and y are the waypoint's map coordinate position, the s value is the distance along the road to get to that waypoint in meters, the dx and dy values define the unit normal vector pointing outward of the highway loop.
 
 The highway's waypoints loop around so the frenet s value, distance along the road, goes from 0 to 6945.554.
 
