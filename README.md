@@ -1,4 +1,4 @@
-# Behavioral and Path Planning for Self-Driving Cars
+# Path Planning for Self-Driving Cars
 
 This project is part of the Self-Driving Car Engineer Nanodegree Program by [Udacity](https://www.udacity.com/).
 
@@ -15,13 +15,13 @@ This project implements the **Behavioral planner** and the **Motion planner** fo
 
 
 **Information provided:** 
-- Highway waypoints $(x, y, s, d_x, d_y)$
-- Ego-car position $(x, y, s, d, yaw, speed)$
-- Sensor fusion consists of other vehicles information $(id, x, y, v_x, v_y, s, d)$
+- Highway waypoints `(x, y, s, d_x, d_y)`
+- Ego-car position `(x, y, s, d, yaw, speed)`
+- Sensor fusion consists of other vehicles information `(id, x, y, v_x, v_y, s, d)`
 
 
 **Output:** 
-- Path points in global coordinate system $(x,y)$ that the car will visit sequentially every 0.02 seconds
+- Path points in global coordinate system `(x,y)` that the car will visit sequentially every 0.02 seconds
 
 
 ## Methodology
@@ -56,10 +56,17 @@ if (vehicle_s < ego_s + 15 && vehicle_s > ego_s - 15 && vehicle_d >= 0)
     too_close[vehicle_lane] = true;
 ```
 
-In the above psudocode, given the frenet $s$ of othe vehicles and the ego-car, BP checks if there is a 30 meters gap  (+/- 15 meters infront and back of the ego-car) in the adjacent lanes.
+In the above psudocode, given the frenet `s` of othe vehicles and the ego-car, BP checks if there is a 30 meters gap  (+/- 15 meters infront and back of the ego-car) in the adjacent lanes.
 If there is no gap, the corresponding lane is marked as occupied.
 
 In all cases other than the cases that ego-car must reduce its speed, BP check the speed and if it is less than the maximum desirable speed, it increases the speed.
+
+**Lock**: To avoid issuing several commands while the previouse command is not yet complete, BP stops issuing new change lane commands until the previouse lane change command is complate.    
+
+In reality, we might need to cancel a command before it is complete, but in this simple scenario, BP issues lane change when it is 100% sure it is safe and since other vehicles behave propoerly, we do not expect to see unpredictable behavior from other vehicles.
+
+The code related to this part can be found in lines 212-221 in `planner.hpp` file.
+
 
 
 ### Motion planner (MOP)
