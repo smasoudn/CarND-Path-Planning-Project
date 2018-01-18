@@ -89,11 +89,12 @@ public:
 		{
 			float d = sensor_fusion[i][6];
 			
-			if (d <4 && d >=0)
+			// Very conservative occupancy detection
+			if (d <=4 && d >=0)
 				vehicle_lane = LEFT_LANE;
-			else if (d >4 && d <=8)
+			if (d >=4 && d <=8)
 				vehicle_lane = MIDDLE_LANE;
-			else if (d >8)
+			if (d >=8)
 				vehicle_lane = RIGHT_LANE;
      
 			
@@ -123,7 +124,7 @@ public:
 			
 		}
 		
-		cout << too_close[0] << "  " << too_close[1] << "  " << too_close[2]  << endl;
+		//cout << too_close[0] << "  " << too_close[1] << "  " << too_close[2]  << endl;
 
         // Decide to change lane 
 		if (warning)
@@ -132,42 +133,58 @@ public:
 			{
 				if (too_close[MIDDLE_LANE] == false){
 				  if(velocity < 49.5)
+				  {
 				      velocity += 0.448;	
+					  cout << "========>>>>>" << endl;
+				  }
 				  current_lane = MIDDLE_LANE;
 				}
 				else{
-			  		velocity -= 0.224;
+					cout << "Reduce" << endl;
+			  		velocity -= 0.448;
 				}
 			}
 			
 			else if (current_lane == MIDDLE_LANE){
 				if (too_close[LEFT_LANE] == false){
 				  if(velocity < 49.5)
+				  {
 				      velocity += 0.448;
+					  cout << "========>>>>>" << endl;
+				  }
 				  current_lane = LEFT_LANE;
 				}
 				else if (too_close[RIGHT_LANE] == false){
 					if(velocity < 49.5)
+					{
 				      velocity += 0.448;
+					  cout << "========>>>>>" << endl;
+					}
 			  		current_lane = RIGHT_LANE;
 				}else{
-		  			velocity -= 0.224;
+		  			velocity -= 0.448;
+					cout << "Reduce" << endl;
 				}
 			}
 			
 			else if (current_lane == RIGHT_LANE){
 				if (too_close[MIDDLE_LANE] ==false){
 					if(velocity < 49.5)
+					{
 				      velocity += 0.448;
+					  cout << "========>>>>>" << endl;
+					}
 		  			current_lane = MIDDLE_LANE;
 				}
 				else{
-		  			velocity -= 0.224;
+		  			velocity -= 0.448;
+					cout << "Reduce" << endl;
 				}
 			}
 		}
 		else if(velocity < 49.5){
 			velocity += 0.448;
+			cout << "========>>>>>" << endl;
 		}
 
 		too_close.clear();
@@ -210,9 +227,9 @@ public:
 		}
           
 		// Adding three more points far away to ensure a smooth trajectory		
-		vector<double> next_wp0 = getXY(car_s + 60, (current_lane * 4 + 2), map_waypoints_s, map_waypoints_x, map_waypoints_y);
-		vector<double> next_wp1 = getXY(car_s + 90, (current_lane * 4 + 2), map_waypoints_s, map_waypoints_x, map_waypoints_y);
-		vector<double> next_wp2 = getXY(car_s + 120, (current_lane * 4 + 2), map_waypoints_s, map_waypoints_x, map_waypoints_y);
+		vector<double> next_wp0 = getXY(car_s + 30, (current_lane * 4 + 2), map_waypoints_s, map_waypoints_x, map_waypoints_y);
+		vector<double> next_wp1 = getXY(car_s + 50, (current_lane * 4 + 2), map_waypoints_s, map_waypoints_x, map_waypoints_y);
+		vector<double> next_wp2 = getXY(car_s + 70, (current_lane * 4 + 2), map_waypoints_s, map_waypoints_x, map_waypoints_y);
 				
 		pts_x.push_back(next_wp0[0]);
 		pts_x.push_back(next_wp1[0]);
