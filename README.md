@@ -65,7 +65,7 @@ In all cases other than the cases that ego-car must reduce its speed, BP check t
 
 In reality, we might need to cancel a command before it is complete, but in this simple scenario, BP issues lane change when it is 100% sure it is safe and since other vehicles behave propoerly, we do not expect to see unpredictable behavior from other vehicles.
 
-The code related to this part can be found in lines 212-221 in `planner.hpp1 file.
+The code related to this part can be found in lines 212-221 in `planner.hpp` file.
 
 
 
