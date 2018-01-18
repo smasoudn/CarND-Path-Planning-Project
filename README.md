@@ -61,6 +61,13 @@ If there is no gap, the corresponding lane is marked as occupied.
 
 In all cases other than the cases that ego-car must reduce its speed, BP check the speed and if it is less than the maximum desirable speed, it increases the speed.
 
+**Lock**: To avoid issuing several commands while the previouse command is not yet complete, BP stops issuing new change lane commands until the previouse lane change command is complate.    
+
+In reality, we might need to cancel a command before it is complete, but in this simple scenario, BP issues lane change when it is 100% sure it is safe and since other vehicles behave propoerly, we do not expect to see unpredictable behavior from other vehicles.
+
+The code related to this part can be found in lines 212-221 in `planner.hpp1 file.
+
+
 
 ### Motion planner (MOP)
 The motion planner module in the `Planner` class, generates trajectories (sets of points) for the controller of the ego-car to follow.
