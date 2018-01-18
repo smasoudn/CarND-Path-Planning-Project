@@ -24,12 +24,12 @@ This project implements the **Behavioral planner** and the **Motion planner** fo
 - Path points in global coordinate system $(x,y)$ that the car will visit sequentially every 0.02 seconds
 
 
-### Methodology
+## Methodology
 This solution has a `planner` class that consists of:
 - **Behavioral planner (BP)** that  performs high-level decision making such as change lane, keep lane, reduce speed, or speed up;
 - **Motion planner (MOP)** that generates trajectory correponding to what behavioral planner dictated.
 
-#### Behavioral planner (BP)
+### Behavioral planner (BP)
 This module performs high-level decision making such as keep lane, change lane, etc. The way that BP makes decision is as follows.
 
 A falg vector has been defined, `vector<bool> too_close`, that indicates whether each lane is occupied by other vehicles or not.
@@ -62,7 +62,7 @@ If there is no gap, the corresponding lane is marked as occupied.
 In all cases other than the cases that ego-car must reduce its speed, BP check the speed and if it is less than the maximum desirable speed, it increases the speed.
 
 
-#### Motion planner (MOP)
+### Motion planner (MOP)
 The motion planner module in the `Planner` class, generates trajectories (sets of points) for the controller of the ego-car to follow.
 
 These trajectories is generated according to BP's decision. To have a smooth driving, MOP consideres points in 60, 90 and 120 meters from the current position of the ego-car,
@@ -71,13 +71,13 @@ These trajectories is generated according to BP's decision. To have a smooth dri
 Finally, we sample from the trajectory and add it to the next points that vehicle needs to follow. The velocity of the ego-car depends on the  spacing of the points.
 
  
-### Simulator.
+## Simulator.
 You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases).
 
-### Goals
+## Goals
 In this project your goal is to safely navigate around a virtual highway with other traffic that is driving +-10 MPH of the 50 MPH speed limit. You will be provided the car's localization and sensor fusion data, there is also a sparse map list of waypoints around the highway. The car should try to go as close as possible to the 50 MPH speed limit, which means passing slower traffic when possible, note that other cars will try to change lanes too. The car should avoid hitting other cars at all cost as well as driving inside of the marked road lanes at all times, unless going from one lane to another. The car should be able to make one complete loop around the 6946m highway. Since the car is trying to go 50 MPH, it should take a little over 5 minutes to complete 1 loop. Also the car should not experience total acceleration over 10 m/s^2 and jerk that is greater than 50 m/s^3.
 
-#### The map of the highway is in data/highway_map.txt
+### The map of the highway is in data/highway_map.txt
 Each waypoint in the list contains  $[x,y,s,dx,dy]$ values. x and y are the waypoint's map coordinate position, the s value is the distance along the road to get to that waypoint in meters, the dx and dy values define the unit normal vector pointing outward of the highway loop.
 
 The highway's waypoints loop around so the frenet s value, distance along the road, goes from 0 to 6945.554.
@@ -91,7 +91,7 @@ The highway's waypoints loop around so the frenet s value, distance along the ro
 
 Here is the data provided from the Simulator to the C++ Program
 
-#### Main car's localization Data (No Noise)
+### Main car's localization Data (No Noise)
 
 ["x"] The car's x position in map coordinates
 
@@ -105,7 +105,7 @@ Here is the data provided from the Simulator to the C++ Program
 
 ["speed"] The car's speed in MPH
 
-#### Previous path data given to the Planner
+### Previous path data given to the Planner
 
 //Note: Return the previous list but with processed points removed, can be a nice tool to show how far along
 the path has processed since last time. 
